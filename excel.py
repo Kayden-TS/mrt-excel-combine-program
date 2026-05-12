@@ -33,7 +33,7 @@ if uploaded_files:
             for file in uploaded_files:
                 try:
                     # 1. 메타 정보 추출
-                    df_meta = pd.read_excel(file, header=None, nrows=2)
+                    df_meta = pd.read_excel(file, header=None, nrows=2, engine='openpyxl')
                     a1_val = str(df_meta.iloc[0, 0])
                     a2_val = str(df_meta.iloc[1, 0])
                     
@@ -41,7 +41,7 @@ if uploaded_files:
                     product_name = a2_val.replace('상품명:', '').strip()
                     
                     # 2. 메인 데이터 읽기
-                    df_data = pd.read_excel(file, header=None, skiprows=8)
+                    df_data = pd.read_excel(file, header=None, skiprows=8, engine='openpyxl')
                     
                     # 3. 새 데이터프레임 구성
                     df_new = pd.DataFrame()

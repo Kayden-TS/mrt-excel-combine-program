@@ -1,6 +1,6 @@
 streamlit
 pandas<3.0.0
-calamine
+python-calamine
 plotly
 st-gsheets-connection
 openpyxl

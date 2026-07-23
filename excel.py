@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
+from datetime import datetime  # 오늘 날짜를 구하기 위해 추가된 모듈
 
 st.set_page_config(page_title="마이리얼트립 리포트 변환기", layout="centered")
 
@@ -83,6 +84,24 @@ if uploaded_files:
                 # 4. 변환 완료 시 데이터 저장 및 자동 새로고침(파일 삭제)
                 if all_data:
                     final_df = pd.concat(all_data, ignore_index=True)
+                    
+                    # --- [기능 추가 및 수정된 부분 시작] ---
+                    # 날짜 형식으로 변환 (문자열인 경우를 대비하여 정확한 비교 및 정렬 수행)
+                    final_df['날짜'] = pd.to_datetime(final_df['날짜'])
+                    
+                    # 1) 오름차순 정렬
+                    final_df = final_df.sort_values(by='날짜', ascending=True)
+                    
+                    # 2) 오늘(today) 날짜 구하기 및 오늘 데이터 제외
+                    today_date = datetime.today().date()
+                    final_df = final_df[final_df['날짜'].dt.date != today_date]
+                    
+                    # (선택) 엑셀에서 날짜가 시간(00:00:00) 없이 YYYY-MM-DD 형식으로 깔끔하게 보이게 하려면 문자열로 다시 변환합니다.
+                    final_df['날짜'] = final_df['날짜'].dt.strftime('%Y-%m-%d')
+                    
+                    # 인덱스 초기화 (정렬 및 필터링 후 꼬인 인덱스를 재정렬)
+                    final_df = final_df.reset_index(drop=True)
+                    # --- [기능 추가 및 수정된 부분 끝] ---
                     
                     output = BytesIO()
                     # 통합 파일 저장 시에는 규격화된 openpyxl을 사용합니다.

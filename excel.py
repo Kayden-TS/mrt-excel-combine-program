@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
-from datetime import datetime  # 오늘 날짜를 구하기 위해 추가된 모듈
+# 한국 시간을 정확히 구하기 위해 timezone과 timedelta를 추가로 임포트합니다.
+from datetime import datetime, timezone, timedelta 
 
 st.set_page_config(page_title="마이리얼트립 리포트 변환기", layout="centered")
 
@@ -85,23 +86,27 @@ if uploaded_files:
                 if all_data:
                     final_df = pd.concat(all_data, ignore_index=True)
                     
-                    # --- [기능 추가 및 수정된 부분 시작] ---
-                    # 날짜 형식으로 변환 (문자열인 경우를 대비하여 정확한 비교 및 정렬 수행)
+                    # --- [날짜 정렬 및 '오늘' 데이터 제외 처리 부분] ---
+                    # 날짜 형식으로 변환
                     final_df['날짜'] = pd.to_datetime(final_df['날짜'])
                     
-                    # 1) 오름차순 정렬
+                    # 1) 오름차순 정렬 (과거 -> 최신)
                     final_df = final_df.sort_values(by='날짜', ascending=True)
                     
-                    # 2) 오늘(today) 날짜 구하기 및 오늘 데이터 제외
-                    today_date = datetime.today().date()
-                    final_df = final_df[final_df['날짜'].dt.date != today_date]
+                    # 2) 매일매일 동적으로 변하는 '오늘' 날짜 구하기 (한국 시간 KST 기준 적용)
+                    # 서버가 어디에 있든 항상 정확히 한국 시간의 '오늘'을 가져옵니다.
+                    KST = timezone(timedelta(hours=9))
+                    dynamic_today = datetime.now(KST).date()
                     
-                    # (선택) 엑셀에서 날짜가 시간(00:00:00) 없이 YYYY-MM-DD 형식으로 깔끔하게 보이게 하려면 문자열로 다시 변환합니다.
+                    # '오늘'에 해당하는 데이터 행 삭제
+                    final_df = final_df[final_df['날짜'].dt.date != dynamic_today]
+                    
+                    # 엑셀 저장 시 시간에 '00:00:00'이 붙지 않도록 문자열(YYYY-MM-DD)로 변경
                     final_df['날짜'] = final_df['날짜'].dt.strftime('%Y-%m-%d')
                     
-                    # 인덱스 초기화 (정렬 및 필터링 후 꼬인 인덱스를 재정렬)
+                    # 인덱스 초기화
                     final_df = final_df.reset_index(drop=True)
-                    # --- [기능 추가 및 수정된 부분 끝] ---
+                    # --- [수정 완료] ---
                     
                     output = BytesIO()
                     # 통합 파일 저장 시에는 규격화된 openpyxl을 사용합니다.
